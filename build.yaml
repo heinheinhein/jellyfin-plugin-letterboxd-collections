@@ -11,6 +11,6 @@ description: >
 category: "General"
 owner: "hein"
 artifacts:
-- "LetterboxdCollections.dll"
+- "Jellyfin.Plugin.LetterboxdCollections.dll"
 changelog: >
   Initial version
