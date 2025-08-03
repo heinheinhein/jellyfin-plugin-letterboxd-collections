@@ -1,0 +1,16 @@
+---
+name: "Letterboxd Collections"
+guid: "f6285969-42bf-4862-b4ae-cb49a50a6e38"
+version: "0.1.0"
+targetAbi: "10.9.0.0"
+framework: "net8.0"
+overview: "Automatically add Letterboxd lists as collections in your library"
+description: >
+  Allows you to add Letterboxd lists as a collection in your library.
+  Periodically scrapes Letterboxd to keep the collections up to date with the lists.
+category: "General"
+owner: "hein"
+artifacts:
+- "LetterboxdCollections.dll"
+changelog: >
+  Initial version

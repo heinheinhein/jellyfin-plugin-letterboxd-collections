@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Letterboxd Collections</title>
+        <meta http-equiv="Content-Type" content="text/html;charset=UTF-8" />
+    </head>
+    <body>
+        <div
+            id="config-page"
+            data-role="page"
+            class="page type-interior pluginConfigurationPage"
+            data-require="emby-input,emby-button,emby-select,emby-checkbox"
+        >
+            <style>
+                .inputContainer {
+                    display: flex;
+                    flex-direction: row;
+                    align-items: end;
+                    gap: 4px;
+                }
+
+                .inputContainer > .name-container {
+                    flex-grow: 1;
+                }
+
+                .inputContainer > .url-container {
+                    flex-grow: 2;
+                }
+
+                .inputContainer > button {
+                    margin: 0;
+                    padding: 0.65em;
+                }
+
+                .detailTable {
+                    margin-bottom: 1.8em;
+                }
+
+                .detailTable th,
+                .detailTable td {
+                    padding: 0.4em;
+                }
+
+                .detailTable tbody tr:nth-child(odd) {
+                    background-color: var(--jf-palette-background-paper);
+                }
+
+                .detailTable td:last-child {
+                    text-align: right;
+                }
+
+                .remove-entry {
+                    margin: 0;
+                    padding: 0.2em;
+                }
+            </style>
+            <div data-role="content">
+                <div class="content-primary">
+                    <h1>Letterboxd Collections</h1>
+                    <form id="config-form">
+                        <div class="inputContainer">
+                            <div class="name-container">
+                                <label class="inputLabel inputLabelUnfocused" for="collection-name">Collection name:</label>
+                                <input id="collection-name" name="collection-name" type="text" is="emby-input" placeholder="Criterion Channel: Michael Mann" />
+                            </div>
+                            <div class="url-container">
+                                <label class="inputLabel inputLabelUnfocused" for="letterboxd-url">Letterboxd url:</label>
+                                <input
+                                    id="letterboxd-url"
+                                    name="letterboxd-url"
+                                    type="text"
+                                    is="emby-input"
+                                    placeholder="https://letterboxd.com/criterion/list/directed-by-michael-mann-criterion-channel/"
+                                />
+                            </div>
+                            <button id="add-entry" is="emby-button" type="button" class="raised button-submit emby-button">
+                                <span class="material-icons add" aria-hidden="true"></span>
+                            </button>
+                        </div>
+
+                        <hr />
+
+                        <table class="detailTable">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Url</th>
+                                </tr>
+                            </thead>
+                            <tbody id="collections-tbody"></tbody>
+                        </table>
+
+                        <hr />
+
+                        <div>
+                            <button is="emby-button" type="submit" class="raised button-submit block emby-button">
+                                <span>Save</span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <script type="text/javascript">
+                const pluginUuid = "f6285969-42bf-4862-b4ae-cb49a50a6e38",
+                    configPage = document.getElementById("config-page"),
+                    configForm = document.getElementById("config-form"),
+                    collectionName = document.getElementById("collection-name"),
+                    letterboxdUrl = document.getElementById("letterboxd-url"),
+                    addEntry = document.getElementById("add-entry"),
+                    collectionsTbody = document.getElementById("collections-tbody");
+
+                let localCollections = [];
+
+                configPage.addEventListener("pageshow", function () {
+                    Dashboard.showLoadingMsg();
+                    ApiClient.getPluginConfiguration(pluginUuid).then(function (config) {
+                        localCollections = config.LetterboxdCollections;
+                        updateTable();
+
+                        Dashboard.hideLoadingMsg();
+                    });
+                });
+
+                configForm.addEventListener("submit", function (e) {
+                    Dashboard.showLoadingMsg();
+
+                    ApiClient.getPluginConfiguration(pluginUuid).then(function (config) {
+                        config.LetterboxdCollections = localCollections;
+
+                        ApiClient.updatePluginConfiguration(pluginUuid, config).then(function (result) {
+                            Dashboard.processPluginConfigurationUpdateResult(result);
+                        });
+                    });
+
+                    e.preventDefault();
+
+                    return false;
+                });
+
+                addEntry.addEventListener("click", () => {
+                    const name = collectionName.value.trim();
+                    const url = letterboxdUrl.value.trim();
+
+                    if (!name || !url) return;
+                    if (localCollections.some((collection) => collection.Name === name && collection.Url === url)) return;
+
+                    localCollections.push({
+                        Name: name,
+                        Url: url,
+                    });
+
+                    collectionName.value = "";
+                    letterboxdUrl.value = "";
+
+                    updateTable();
+                });
+
+                function addListToTable(letterboxdList) {
+                    const tr = document.createElement("tr");
+
+                    const name = document.createElement("td");
+                    name.innerText = letterboxdList.Name;
+                    const url = document.createElement("td");
+                    url.innerText = letterboxdList.Url;
+
+                    const remove = document.createElement("td");
+                    const removeButton = document.createElement("button");
+                    removeButton.is = "emby-button";
+                    removeButton.type = "button";
+                    removeButton.classList = "raised emby-button remove-entry";
+                    removeButton.innerHTML = '<span class="material-icons delete" aria-hidden="true"></span>';
+                    removeButton.addEventListener("click", () => {
+                        localCollections = localCollections.filter(
+                            (collection) => !(collection.Name === letterboxdList.Name && collection.Url === letterboxdList.Url)
+                        );
+                        updateTable();
+                    });
+
+                    remove.appendChild(removeButton);
+
+                    tr.appendChild(name);
+                    tr.appendChild(url);
+                    tr.appendChild(remove);
+                    collectionsTbody.appendChild(tr);
+                }
+
+                function updateTable() {
+                    collectionsTbody.innerHTML = "";
+                    for (let i = 0; i < localCollections.length; i++) {
+                        addListToTable(localCollections[i]);
+                    }
+
+                    if (localCollections.length === 0) {
+                        collectionsTbody.innerText = "No lists added yet...";
+                    }
+                }
+            </script>
+        </div>
+    </body>
+</html>
