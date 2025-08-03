@@ -1,0 +1,14 @@
+name: Build plugin
+
+on:
+  push:
+    paths-ignore:
+      - "**/*.md"
+  workflow_dispatch:
+
+jobs:
+  call:
+    uses: jellyfin/jellyfin-meta-plugins/.github/workflows/build.yaml@master
+    with:
+      dotnet-version: "8.0.*"
+      dotnet-target: "net8.0"
